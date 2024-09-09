@@ -26,18 +26,14 @@ const App = () => {
       setSudokoBox(data)
       setCondition(true)
     }
-    if (data[0].items === "X" || data[0].items === "O" && data[1].items === "X" || data[1].items === "O" && data[2].items === "X" || data[2].items === "O" && data[3].items === "X" || data[3].items === "O" && data[4].items === "X" || data[4].items === "O" && data[5].items === "X" || data[5].items === "O" && data[6].items === "X" || data[6].items === "O" && data[7].items === "X" || data[7].items === "O" && data[8].items === "X" || data[8].items === "O") {
-      return console.log("true")
-    }
-    // const winningCryteria = data.filter((index,el) => {
-    //   if (el.items === "X" ||el.items === "O") return true
-    // })
-    // console.log(winningCryteria, "true")
+    if (data.every(item => item.items === "X" || item.items === "O")) {
+      winningCriteria(index)
+    } //data.every is a javascript loop which waits until it checks all the conditions 
   }
 
-  useEffect(() => {
+  const winningCriteria = (index) => {
 
-  }, [])
+  }
 
   return (
     <SafeAreaView style={Styles.Container} >
