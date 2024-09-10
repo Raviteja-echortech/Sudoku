@@ -1,51 +1,93 @@
 import React, { useEffect, useState } from 'react';
-import { FlatList, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, FlatList, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { io } from 'socket.io-client';
+
+const initialCondition = [
+  { items: "", id: 1 },
+  { items: "", id: 2 },
+  { items: "", id: 3 },
+  { items: "", id: 4 },
+  { items: "", id: 5 },
+  { items: "", id: 6 },
+  { items: "", id: 7 },
+  { items: "", id: 8 },
+  { items: "", id: 9 },
+];
 
 const App = () => {
-  const [sudokuBox, setSudokoBox] = useState([
-    { items: "", id: 1 },
-    { items: "", id: 2 },
-    { items: "", id: 3 },
-    { items: "", id: 4 },
-    { items: "", id: 5 },
-    { items: "", id: 6 },
-    { items: "", id: 7 },
-    { items: "", id: 8 },
-    { items: "", id: 9 },
-  ])
-  const [switchCondition, setCondition] = useState(true)
+  const [sudokuBox, setSudokuBox] = useState(initialCondition);
+  const [switchCondition, setCondition] = useState(true);
+
+  // Connect to the server using socket.io
+  const socket = io("http://192.168.0.113:3000"); // Ensure the IP matches your server's IP
+
+  useEffect(() => {
+    // Listen for updates from the server
+    socket.on("game_update", (updatedBoard) => {
+      setSudokuBox(updatedBoard.board);
+      setCondition(updatedBoard.switchCondition);
+    });
+
+    // Listen for winner updates from the server
+    socket.on("game_winner", (winner) => {
+      handleWinner(winner);
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
 
   const handleUserEnter = (index) => {
     const data = [...sudokuBox];
-    if (switchCondition) {
+
+    // Update the game state locally
+    if (switchCondition && (data[index].items !== "O")) {
       data[index].items = "X";
-      setSudokoBox(data)
-      setCondition(false)
-    } else {
+      setCondition(false);
+    } else if (!switchCondition && (data[index].items !== "X")) {
       data[index].items = "O";
-      setSudokoBox(data)
-      setCondition(true)
+      setCondition(true);
     }
-    if (data.every(item => item.items === "X" || item.items === "O")) {
-      winningCriteria(index)
-    } //data.every is a javascript loop which waits until it checks all the conditions 
-  }
 
-  const winningCriteria = (index) => {
+    setSudokuBox(data);
 
-  }
+    // Send the updated state to the server
+    socket.emit("game_update", { board: data, switchCondition: !switchCondition });
+  };
+
+  const handleWinner = (winner) => {
+    Alert.alert('Tie Take Toe', `${winner}`, [
+      {
+        text: 'Cancel',
+        onPress: () => console.log('Cancel Pressed'),
+        style: 'cancel',
+      },
+      {
+        text: 'OK', onPress: () => {
+          const resetBoard = initialCondition.map(box => ({ ...box, items: "" }));
+          setSudokuBox(resetBoard);
+          setCondition(true);
+
+          // Notify server to reset the game
+          socket.emit("reset_game", { board: resetBoard, switchCondition: true });
+        }
+      }
+    ]);
+  };
 
   return (
-    <SafeAreaView style={Styles.Container} >
-      <View style={{ height: "50%", }} >
+    <SafeAreaView style={styles.container}>
+      <View style={{ height: "50%" }}>
+        <Text style={styles.title}>X Starts First</Text>
         <FlatList
           numColumns={3}
           data={sudokuBox}
           contentContainerStyle={{ justifyContent: "center", alignSelf: "center" }}
           renderItem={({ item, index }) => {
             return (
-              <TouchableOpacity key={item.id} activeOpacity={0.7} style={Styles.item} onPress={() => handleUserEnter(index)} >
-                <Text style={Styles.itemText}>{item.items}</Text>
+              <TouchableOpacity key={item.id} activeOpacity={0.7} style={styles.item} onPress={() => handleUserEnter(index)}>
+                <Text style={styles.itemText}>{item.items}</Text>
               </TouchableOpacity>
             );
           }}
@@ -56,26 +98,31 @@ const App = () => {
   );
 };
 
-const Styles = StyleSheet.create({
-  Container: {
+const styles = StyleSheet.create({
+  container: {
     flex: 1,
     backgroundColor: "#ffff",
     justifyContent: "center",
     alignItems: "center",
   },
+  title: {
+    textAlign: "center",
+    fontSize: 20,
+    color: "#000",
+    fontWeight: "800",
+  },
   item: {
-
     alignItems: 'center',
     justifyContent: 'center',
     height: 100,
     width: 100,
     borderWidth: 2,
-    borderColor: "black"
+    borderColor: "black",
   },
   itemText: {
     color: '#000',
     fontSize: 30,
-    fontWeight: "900"
+    fontWeight: "900",
   },
 });
 
