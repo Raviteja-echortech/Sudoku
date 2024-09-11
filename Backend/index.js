@@ -40,7 +40,7 @@ io.on("connection", (socket) => {
   socket.on("game_update", (data) => {
     gameState = data;
 
-    io.emit("game_update", gameState);
+    io.emit("game_update", gameState); // this statement is to run the code in on both the client
 
     if (checkWinner(gameState.board, "O")) {
       io.emit("game_winner", "Winner O");

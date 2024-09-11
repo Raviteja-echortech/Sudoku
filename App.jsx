@@ -19,7 +19,7 @@ const App = () => {
   const [switchCondition, setCondition] = useState(true);
 
   // Connect to the server using socket.io
-  const socket = io("http://192.168.0.113:3000"); // Ensure the IP matches your server's IP
+  const socket = io("http://0.0.0.0:3000"); // Ensure the IP matches your server's IP
 
   useEffect(() => {
     // Listen for updates from the server
